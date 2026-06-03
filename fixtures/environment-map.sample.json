@@ -1,0 +1,13 @@
+{
+  "assetIds": {
+    "asset_001": "production"
+  },
+  "assetNames": {
+    "preproduction-backend": "staging"
+  },
+  "assetNamePrefixes": {
+    "dev-": "development",
+    "sandbox-": "sandbox"
+  }
+}
+

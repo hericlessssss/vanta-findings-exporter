@@ -1,0 +1,61 @@
+{
+  "results": [
+    {
+      "pageInfo": {
+        "endCursor": "sample-end-cursor",
+        "hasNextPage": false,
+        "hasPreviousPage": false,
+        "startCursor": "sample-start-cursor"
+      },
+      "data": [
+        {
+          "id": "vuln_001",
+          "name": "CVE-2026-9256 - nginx:1.28.3",
+          "description": "Sanitized sample vulnerability description.",
+          "integrationId": "aws-inspector",
+          "packageIdentifier": "nginx",
+          "vulnerabilityType": "CVE",
+          "targetId": "asset_001",
+          "firstDetectedDate": "2026-05-24T23:42:00Z",
+          "sourceDetectedDate": null,
+          "lastDetectedDate": "2026-05-28T15:35:00Z",
+          "severity": "HIGH",
+          "cvssSeverityScore": 8.1,
+          "scannerScore": null,
+          "isFixable": true,
+          "fixedVersion": "1.28.3-r2",
+          "remediateByDate": "2026-06-10T00:00:00Z",
+          "relatedVulns": ["CVE-2026-9256"],
+          "relatedUrls": ["https://nvd.nist.gov/vuln/detail/CVE-2026-9256"],
+          "externalURL": "https://console.aws.amazon.com/inspector/v2/home",
+          "scanSource": "AWS",
+          "deactivateMetadata": null
+        },
+        {
+          "id": "vuln_002",
+          "name": "CVE-2026-1111 - openssl:3.0.0",
+          "description": "Sanitized sample vulnerability description.",
+          "integrationId": "aws-inspector",
+          "packageIdentifier": "openssl",
+          "vulnerabilityType": "CVE",
+          "targetId": "asset_002",
+          "firstDetectedDate": "2026-05-25T10:00:00Z",
+          "sourceDetectedDate": null,
+          "lastDetectedDate": null,
+          "severity": "MEDIUM",
+          "cvssSeverityScore": 5.4,
+          "scannerScore": null,
+          "isFixable": false,
+          "fixedVersion": null,
+          "remediateByDate": null,
+          "relatedVulns": ["CVE-2026-1111"],
+          "relatedUrls": [],
+          "externalURL": "https://console.aws.amazon.com/inspector/v2/home",
+          "scanSource": "AWS",
+          "deactivateMetadata": null
+        }
+      ]
+    }
+  ]
+}
+

@@ -1,0 +1,94 @@
+{
+  "results": [
+    {
+      "pageInfo": {
+        "endCursor": "page-1-end",
+        "hasNextPage": true,
+        "hasPreviousPage": false,
+        "startCursor": "page-1-start"
+      },
+      "data": [
+        {
+          "id": "vuln_101",
+          "name": "CVE-2026-2001 - nginx:1.28.3",
+          "description": "Sanitized paginated sample vulnerability description.",
+          "integrationId": "aws-inspector",
+          "packageIdentifier": "nginx",
+          "vulnerabilityType": "CVE",
+          "targetId": "asset_101",
+          "firstDetectedDate": "2026-05-24T23:42:00Z",
+          "sourceDetectedDate": null,
+          "lastDetectedDate": "2026-05-28T15:35:00Z",
+          "severity": "HIGH",
+          "cvssSeverityScore": 8.1,
+          "scannerScore": null,
+          "isFixable": true,
+          "fixedVersion": "1.28.3-r2",
+          "remediateByDate": "2026-06-10T00:00:00Z",
+          "relatedVulns": ["CVE-2026-2001"],
+          "relatedUrls": [],
+          "externalURL": "https://console.aws.amazon.com/inspector/v2/home",
+          "scanSource": "AWS",
+          "deactivateMetadata": null
+        }
+      ]
+    },
+    {
+      "pageInfo": {
+        "endCursor": "page-2-end",
+        "hasNextPage": false,
+        "hasPreviousPage": true,
+        "startCursor": "page-2-start"
+      },
+      "data": [
+        {
+          "id": "vuln_102",
+          "name": "CVE-2026-2002 - openssl:3.0.0",
+          "description": "Sanitized paginated sample vulnerability description.",
+          "integrationId": "aws-inspector",
+          "packageIdentifier": "openssl",
+          "vulnerabilityType": "CVE",
+          "targetId": "asset_102",
+          "firstDetectedDate": "2026-05-25T10:00:00Z",
+          "sourceDetectedDate": null,
+          "lastDetectedDate": null,
+          "severity": "MEDIUM",
+          "cvssSeverityScore": 5.4,
+          "scannerScore": null,
+          "isFixable": false,
+          "fixedVersion": null,
+          "remediateByDate": null,
+          "relatedVulns": ["CVE-2026-2002"],
+          "relatedUrls": [],
+          "externalURL": "https://console.aws.amazon.com/inspector/v2/home",
+          "scanSource": "AWS",
+          "deactivateMetadata": null
+        },
+        {
+          "id": "vuln_103",
+          "name": "CVE-2026-2003 - curl:8.0.0",
+          "description": "Sanitized paginated sample vulnerability description.",
+          "integrationId": "aws-inspector",
+          "packageIdentifier": "curl",
+          "vulnerabilityType": "CVE",
+          "targetId": "asset_103",
+          "firstDetectedDate": "2026-05-26T10:00:00Z",
+          "sourceDetectedDate": null,
+          "lastDetectedDate": null,
+          "severity": "LOW",
+          "cvssSeverityScore": 3.1,
+          "scannerScore": null,
+          "isFixable": true,
+          "fixedVersion": "8.0.1",
+          "remediateByDate": null,
+          "relatedVulns": ["CVE-2026-2003"],
+          "relatedUrls": [],
+          "externalURL": "https://console.aws.amazon.com/inspector/v2/home",
+          "scanSource": "AWS",
+          "deactivateMetadata": null
+        }
+      ]
+    }
+  ]
+}
+

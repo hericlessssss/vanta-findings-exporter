@@ -1,0 +1,31 @@
+{
+  "results": [
+    {
+      "pageInfo": {
+        "endCursor": "sample-end-cursor",
+        "hasNextPage": false,
+        "hasPreviousPage": false,
+        "startCursor": "sample-start-cursor"
+      },
+      "data": [
+        {
+          "id": "asset_001",
+          "name": "production-backend",
+          "assetType": "container_image",
+          "hasBeenScanned": true,
+          "imageScanTag": null,
+          "scanners": []
+        },
+        {
+          "id": "asset_002",
+          "name": "preproduction-backend",
+          "assetType": "container_image",
+          "hasBeenScanned": true,
+          "imageScanTag": null,
+          "scanners": []
+        }
+      ]
+    }
+  ]
+}
+

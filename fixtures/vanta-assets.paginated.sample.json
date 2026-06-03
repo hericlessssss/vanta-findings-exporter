@@ -1,0 +1,49 @@
+{
+  "results": [
+    {
+      "pageInfo": {
+        "endCursor": "page-1-end",
+        "hasNextPage": true,
+        "hasPreviousPage": false,
+        "startCursor": "page-1-start"
+      },
+      "data": [
+        {
+          "id": "asset_101",
+          "name": "production-api",
+          "assetType": "container_image",
+          "hasBeenScanned": true,
+          "imageScanTag": null,
+          "scanners": []
+        }
+      ]
+    },
+    {
+      "pageInfo": {
+        "endCursor": "page-2-end",
+        "hasNextPage": false,
+        "hasPreviousPage": true,
+        "startCursor": "page-2-start"
+      },
+      "data": [
+        {
+          "id": "asset_102",
+          "name": "staging-api",
+          "assetType": "container_image",
+          "hasBeenScanned": true,
+          "imageScanTag": null,
+          "scanners": []
+        },
+        {
+          "id": "asset_103",
+          "name": "dev-worker",
+          "assetType": "container_image",
+          "hasBeenScanned": true,
+          "imageScanTag": null,
+          "scanners": []
+        }
+      ]
+    }
+  ]
+}
+

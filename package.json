@@ -1,0 +1,17 @@
+{
+  "name": "vanta-findings-exporter",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Turn Vanta vulnerability findings into operation-ready outputs.",
+  "bin": {
+    "vanta-findings-exporter": "./src/cli.js"
+  },
+  "scripts": {
+    "cli": "node src/cli.js",
+    "test": "node test/run-tests.js"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
