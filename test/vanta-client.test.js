@@ -66,6 +66,49 @@ test("fetches all pages for Vanta resources", async () => {
   assert.equal(calls[1].options.headers.Authorization, "Bearer test-token");
 });
 
+test("fetches tests and test entities with expected filters", async () => {
+  const calls = [];
+  const fetchImpl = async (url, options = {}) => {
+    calls.push({ url, options });
+
+    if (url.endsWith("/oauth/token")) {
+      return jsonResponse({ access_token: "test-token" });
+    }
+
+    if (url.includes("/v1/tests?")) {
+      assert.match(url, /statusFilter=NEEDS_ATTENTION/);
+      return jsonResponse({
+        results: [{ pageInfo: { hasNextPage: false }, data: [{ id: "test_001" }] }],
+      });
+    }
+
+    if (url.includes("/v1/tests/test_001/entities?")) {
+      assert.match(url, /entityStatus=FAILING/);
+      return jsonResponse({
+        results: [{ pageInfo: { hasNextPage: false }, data: [{ id: "entity_001" }] }],
+      });
+    }
+
+    throw new Error(`Unexpected URL: ${url}`);
+  };
+
+  const client = await createVantaClient(
+    {
+      clientId: "client-id",
+      clientSecret: "client-secret",
+      scope: "vanta-api.all:read",
+      apiBaseUrl: "https://api.vanta.test",
+    },
+    { fetchImpl },
+  );
+
+  const tests = await client.fetchTests({ query: { statusFilter: "NEEDS_ATTENTION" } });
+  const entities = await client.fetchTestEntities("test_001", { query: { entityStatus: "FAILING" } });
+
+  assert.equal(tests.results[0].data[0].id, "test_001");
+  assert.equal(entities.results[0].data[0].id, "entity_001");
+});
+
 function jsonResponse(body, status = 200) {
   return {
     ok: status >= 200 && status < 300,
@@ -73,4 +116,3 @@ function jsonResponse(body, status = 200) {
     json: async () => body,
   };
 }
-

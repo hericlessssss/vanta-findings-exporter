@@ -18,6 +18,7 @@ const elements = {
   reloadButton: document.querySelector("#reloadButton"),
   testConnectionButton: document.querySelector("#testConnectionButton"),
   fetchButton: document.querySelector("#fetchButton"),
+  fetchTestsButton: document.querySelector("#fetchTestsButton"),
   generateMapButton: document.querySelector("#generateMapButton"),
   exportCsvButton: document.querySelector("#exportCsvButton"),
   generateTasksButton: document.querySelector("#generateTasksButton"),
@@ -42,6 +43,8 @@ const elements = {
   severitySparkline: document.querySelector("#severitySparkline"),
   toast: document.querySelector("#toast"),
   activityLog: document.querySelector("#activityLog"),
+  testsCount: document.querySelector("#testsCount"),
+  testsList: document.querySelector("#testsList"),
 };
 
 await initialize();
@@ -51,6 +54,7 @@ async function initialize() {
   renderActivity();
   await refreshStatus();
   await loadFindings();
+  await loadTests();
 }
 
 function bindEvents() {
@@ -59,6 +63,10 @@ function bindEvents() {
   elements.fetchButton.addEventListener("click", async () => {
     await runAction("Fetching latest findings", "/api/fetch");
     await loadFindings();
+  });
+  elements.fetchTestsButton.addEventListener("click", async () => {
+    await runAction("Fetching failing tests", "/api/fetch-tests");
+    await loadTests();
   });
   elements.generateMapButton.addEventListener("click", () => runAction("Generating asset map skeleton", "/api/generate-map-skeleton"));
   elements.exportCsvButton.addEventListener("click", () => exportOutput("csv", "service"));
@@ -80,6 +88,8 @@ async function refreshStatus() {
     ["Vanta credentials", status.env],
     ["Vulnerability export", status.vulnerabilities],
     ["Asset export", status.assets],
+    ["Tests export", status.tests],
+    ["Test entities", status.testEntities],
     ["Asset map", status.assetMap],
   ];
 
@@ -98,6 +108,15 @@ async function loadFindings() {
     addActivity("success", `Loaded ${state.findings.length} findings from local exports.`);
   } catch (error) {
     addActivity("error", error.message);
+  }
+}
+
+async function loadTests() {
+  try {
+    const data = await getJson("/api/tests");
+    renderTests(data.tests, data.summary);
+  } catch {
+    renderTests([], { totalTests: 0, failingEntities: 0 });
   }
 }
 
@@ -200,6 +219,33 @@ function renderFindingDetails(finding) {
       <p class="copy-context">${escapeHtml(buildCopyBlock(finding))}</p>
     </div>
   `;
+}
+
+function renderTests(tests, summary = {}) {
+  elements.testsCount.textContent = `${summary.totalTests ?? tests.length} tests`;
+
+  if (tests.length === 0) {
+    elements.testsList.innerHTML = `<div class="empty-state">Fetch Vanta tests to list controls and entities that need remediation.</div>`;
+    return;
+  }
+
+  elements.testsList.innerHTML = tests.map((test) => `
+    <article class="test-card">
+      <div>
+        <span class="status-pill">${escapeHtml(test.status)}</span>
+        <h3>${escapeHtml(test.name)}</h3>
+        <p>${escapeHtml(test.description || "No description provided.")}</p>
+      </div>
+      <div class="test-meta">
+        <span>Category: ${escapeHtml(test.category)}</span>
+        <span>Integration: ${escapeHtml(test.integration)}</span>
+        <span>Owner: ${escapeHtml(test.owner)}</span>
+        <span>Due date: ${escapeHtml(formatDueDate(test.dueDate))}</span>
+        <span>Failing entities: ${test.failingEntities.length}</span>
+      </div>
+      <pre>${escapeHtml(buildTestCopyBlock(test))}</pre>
+    </article>
+  `).join("");
 }
 
 function updateFilter(name, value) {
@@ -350,6 +396,29 @@ function buildCopyBlock(finding) {
     "",
     "Expected action:",
     "Analyze the affected repository/service, update the vulnerable package to the fixed version when available, validate the build, and document evidence for the Vanta remediation workflow.",
+  ].join("\n");
+}
+
+function buildTestCopyBlock(test) {
+  return [
+    `[DevOps | Vanta | Compliance] Remediate failing test: ${test.name}`,
+    "",
+    "Context:",
+    `Status: ${test.status}`,
+    `Category: ${test.category}`,
+    `Integration: ${test.integration}`,
+    `Owner: ${test.owner}`,
+    `Due date: ${formatDueDate(test.dueDate)}`,
+    `Frameworks: ${test.frameworks.length > 0 ? test.frameworks.join(", ") : "not provided"}`,
+    `Controls: ${test.controls.length > 0 ? test.controls.join(", ") : "not provided"}`,
+    "",
+    "Failing entities:",
+    ...(test.failingEntities.length > 0
+      ? test.failingEntities.map((entity) => `- ${entity.name} (${entity.type}) ${entity.region ?? ""}`.trim())
+      : ["- none returned"]),
+    "",
+    "Expected action:",
+    "Review the failing Vanta test, remediate the affected cloud/resource configuration, rerun validation, and document evidence for compliance follow-up.",
   ].join("\n");
 }
 

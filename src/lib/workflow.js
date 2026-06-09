@@ -4,6 +4,7 @@ import { buildAssetMapSkeleton } from "./asset-map.js";
 import { loadVantaConfig } from "./env.js";
 import { filterFindings } from "./filters.js";
 import { normalizeFindings } from "./normalize.js";
+import { normalizeTests } from "./normalize-tests.js";
 import { renderCsv, renderJiraTasks, renderJson, renderMarkdownSummary, renderOperationalTasks } from "./render.js";
 import { buildSummary } from "./summary.js";
 import { createVantaClient } from "./vanta-client.js";
@@ -35,6 +36,33 @@ export async function fetchVantaData({ vulnerabilitiesOut, assetsOut, pageSize =
   return { vulnerabilitiesOut, assetsOut };
 }
 
+export async function fetchVantaTestData({ testsOut, testEntitiesOut, pageSize = "100" }) {
+  const config = await loadVantaConfig();
+  const client = await createVantaClient(config);
+  const tests = await client.fetchTests({
+    pageSize,
+    query: { statusFilter: "NEEDS_ATTENTION" },
+  });
+  const testItems = tests.results.flatMap((result) => result.data ?? []);
+  const entityEntries = await Promise.all(
+    testItems.map(async (test) => [
+      test.id,
+      await client.fetchTestEntities(test.id, {
+        pageSize,
+        query: { entityStatus: "FAILING" },
+      }),
+    ]),
+  );
+  const testEntities = Object.fromEntries(entityEntries);
+
+  await Promise.all([
+    writeJsonFile(testsOut, tests),
+    writeJsonFile(testEntitiesOut, testEntities),
+  ]);
+
+  return { testsOut, testEntitiesOut };
+}
+
 export async function generateAssetMapSkeleton({ assetsPath, outPath }) {
   const assetResponse = await readJsonFile(assetsPath);
   const skeleton = buildAssetMapSkeleton(assetResponse);
@@ -56,6 +84,24 @@ export async function loadFindingsFromFiles({ vulnerabilitiesPath, assetsPath, e
   const summary = buildSummary(findings);
 
   return { findings, summary };
+}
+
+export async function loadTestsFromFiles({ testsPath, testEntitiesPath }) {
+  const [testResponse, entityResponsesByTestId] = await Promise.all([
+    readJsonFile(testsPath),
+    readJsonFile(testEntitiesPath),
+  ]);
+  const tests = normalizeTests(testResponse, entityResponsesByTestId);
+
+  return {
+    tests,
+    summary: {
+      totalTests: tests.length,
+      failingEntities: tests.reduce((sum, test) => sum + test.failingEntities.length, 0),
+      byCategory: countBy(tests, "category"),
+      byIntegration: countBy(tests, "integration"),
+    },
+  };
 }
 
 export function renderFindingsOutput(findings, format, options = {}) {
@@ -106,4 +152,12 @@ function normalizeFilters(filters) {
 
 function emptyToUndefined(value) {
   return value === "" || value === null ? undefined : value;
+}
+
+function countBy(items, key) {
+  return items.reduce((counts, item) => {
+    const value = item[key] ?? "unknown";
+    counts[value] = (counts[value] ?? 0) + 1;
+    return counts;
+  }, {});
 }

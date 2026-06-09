@@ -131,7 +131,7 @@ h2 {
 }
 
 .status-grid {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 12px;
   margin-bottom: 14px;
 }
@@ -141,7 +141,8 @@ h2 {
 .activity-panel,
 .filter-panel,
 .findings-panel,
-.details-panel {
+.details-panel,
+.tests-panel {
   border: 1px solid var(--line-soft);
   background: color-mix(in srgb, var(--panel) 92%, transparent);
   box-shadow: var(--shadow);
@@ -186,7 +187,7 @@ h2 {
 }
 
 .action-strip {
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 10px;
   margin-bottom: 12px;
 }
@@ -535,6 +536,79 @@ h2 {
 .filter-panel,
 .details-panel {
   padding: 16px;
+}
+
+.tests-panel {
+  margin-top: 12px;
+  padding: 16px;
+  border-radius: 8px;
+}
+
+.tests-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.test-card {
+  display: grid;
+  gap: 12px;
+  border: 1px solid var(--line-soft);
+  border-radius: 8px;
+  padding: 14px;
+  background: #080d13;
+}
+
+.test-card h3 {
+  margin: 8px 0 8px;
+  font-size: 15px;
+}
+
+.test-card p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.test-card pre {
+  max-height: 220px;
+  margin: 0;
+  overflow: auto;
+  border: 1px solid var(--line-soft);
+  border-radius: 8px;
+  padding: 12px;
+  color: #d8e0ea;
+  background: #060a10;
+  font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+.test-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.test-meta span,
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0 9px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.status-pill {
+  border-color: rgb(255 207 107 / 34%);
+  color: var(--amber);
+  background: rgb(255 207 107 / 7%);
+  font-weight: 800;
 }
 
 .findings-panel {

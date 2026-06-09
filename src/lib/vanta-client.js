@@ -9,6 +9,10 @@ export async function createVantaClient(config, options = {}) {
       fetchPaginatedResource(config, fetchImpl, token, "/v1/vulnerabilities", params),
     fetchVulnerableAssets: (params = {}) =>
       fetchPaginatedResource(config, fetchImpl, token, "/v1/vulnerable-assets", params),
+    fetchTests: (params = {}) =>
+      fetchPaginatedResource(config, fetchImpl, token, "/v1/tests", params),
+    fetchTestEntities: (testId, params = {}) =>
+      fetchPaginatedResource(config, fetchImpl, token, `/v1/tests/${encodeURIComponent(testId)}/entities`, params),
   };
 }
 

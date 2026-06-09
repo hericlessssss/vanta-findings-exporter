@@ -7,8 +7,10 @@ import { loadVantaConfig } from "./lib/env.js";
 import { createVantaClient } from "./lib/vanta-client.js";
 import {
   fetchVantaData,
+  fetchVantaTestData,
   generateAssetMapSkeleton,
   loadFindingsFromFiles,
+  loadTestsFromFiles,
   renderFindingsOutput,
 } from "./lib/workflow.js";
 
@@ -18,6 +20,8 @@ const paths = {
   env: join(rootDir, ".env"),
   vulnerabilities: join(rootDir, "exports", "vulnerabilities.json"),
   assets: join(rootDir, "exports", "assets.json"),
+  tests: join(rootDir, "exports", "tests.json"),
+  testEntities: join(rootDir, "exports", "test-entities.json"),
   assetMap: join(rootDir, "config", "asset-map.json"),
 };
 
@@ -82,6 +86,16 @@ async function handleApi(request, response) {
     return;
   }
 
+  if (request.method === "POST" && url.pathname === "/api/fetch-tests") {
+    await fetchVantaTestData({
+      testsOut: paths.tests,
+      testEntitiesOut: paths.testEntities,
+      pageSize: "100",
+    });
+    sendJson(response, 200, { ok: true });
+    return;
+  }
+
   if (request.method === "POST" && url.pathname === "/api/generate-map-skeleton") {
     await generateAssetMapSkeleton({ assetsPath: paths.assets, outPath: paths.assetMap });
     sendJson(response, 200, { ok: true });
@@ -101,6 +115,15 @@ async function handleApi(request, response) {
       },
     });
     sendJson(response, 200, { findings: data.findings, summary: serializeSummary(data.summary) });
+    return;
+  }
+
+  if (request.method === "GET" && url.pathname === "/api/tests") {
+    const data = await loadTestsFromFiles({
+      testsPath: paths.tests,
+      testEntitiesPath: paths.testEntities,
+    });
+    sendJson(response, 200, data);
     return;
   }
 
@@ -143,14 +166,16 @@ function countObjectToRows(counts) {
 }
 
 async function getStatus() {
-  const [env, vulnerabilities, assets, assetMap] = await Promise.all([
+  const [env, vulnerabilities, assets, tests, testEntities, assetMap] = await Promise.all([
     fileStatus(paths.env),
     fileStatus(paths.vulnerabilities),
     fileStatus(paths.assets),
+    fileStatus(paths.tests),
+    fileStatus(paths.testEntities),
     fileStatus(paths.assetMap),
   ]);
 
-  return { env, vulnerabilities, assets, assetMap };
+  return { env, vulnerabilities, assets, tests, testEntities, assetMap };
 }
 
 async function testConnection() {

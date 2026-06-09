@@ -42,6 +42,10 @@
           <span>05</span>
           Generate Jira tasks
         </button>
+        <button id="fetchTestsButton" type="button">
+          <span>06</span>
+          Fetch failing tests
+        </button>
       </section>
 
       <section class="activity-panel" aria-label="Activity log">
@@ -142,6 +146,19 @@
             Select a finding to inspect the remediation context.
           </div>
         </aside>
+      </section>
+
+      <section class="tests-panel">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">Tests</p>
+            <h2>Compliance tests requiring action</h2>
+          </div>
+          <span id="testsCount" class="count-pill">0 tests</span>
+        </div>
+        <div id="testsList" class="tests-list">
+          <div class="empty-state">Fetch Vanta tests to list controls and entities that need remediation.</div>
+        </div>
       </section>
     </main>
 
