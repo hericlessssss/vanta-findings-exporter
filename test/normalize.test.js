@@ -14,8 +14,8 @@ test("normalizes Vanta vulnerabilities and joins assets by targetId", async () =
   assert.equal(findings[0].isFixable, true);
   assert.equal(findings[0].fixedVersion, "1.28.3-r2");
   assert.equal(findings[0].owner, "unknown");
-  assert.equal(findings[0].service, "unknown");
-  assert.equal(findings[0].repository, "unknown");
+  assert.equal(findings[0].service, "backend");
+  assert.equal(findings[0].repository, "lemon-alerts/sfj-backend-python");
   assert.equal(findings[1].environment, "preproduction");
 });
 
@@ -48,6 +48,43 @@ test("keeps string environment mapping backwards compatible", async () => {
   assert.equal(findings[0].owner, "unknown");
 });
 
+test("treats unknown map placeholders as empty and infers operational names", () => {
+  const vulnerabilityResponse = {
+    results: [
+      {
+        data: [
+          { id: "vuln_001", targetId: "asset_spx", name: "CVE-1", severity: "medium" },
+          { id: "vuln_002", targetId: "asset_lambda", name: "CVE-2", severity: "low" },
+        ],
+      },
+    ],
+  };
+  const assetResponse = {
+    results: [
+      {
+        data: [
+          { id: "asset_spx", name: "spx-loader: i-0ba39d3c3d38fa109 (3.85.53.182)" },
+          { id: "asset_lambda", name: "serverless-lemon-privates-transform-dev" },
+        ],
+      },
+    ],
+  };
+
+  const findings = normalizeFindings(vulnerabilityResponse, assetResponse, {
+    environmentMap: {
+      assetIds: {
+        asset_spx: { environment: "unknown", service: "unknown", repository: "unknown" },
+        asset_lambda: { environment: "unknown", service: "unknown", repository: "unknown" },
+      },
+    },
+  });
+
+  assert.equal(findings[0].service, "spx-loader");
+  assert.equal(findings[0].repository, "aws/spx-loader");
+  assert.equal(findings[1].service, "serverless-lemon-privates-transform");
+  assert.equal(findings[1].repository, "aws/lambda/serverless-lemon-privates-transform-dev");
+});
+
 test("builds summary counts by severity, package, and asset", async () => {
   const findings = await loadFindings();
   const summary = buildSummary(findings);
@@ -60,8 +97,8 @@ test("builds summary counts by severity, package, and asset", async () => {
   assert.equal(summary.byPackage.openssl, 1);
   assert.equal(summary.byAsset["production-backend"], 1);
   assert.equal(summary.byOwner.unknown, 2);
-  assert.equal(summary.byService.unknown, 2);
-  assert.equal(summary.byRepository.unknown, 2);
+  assert.equal(summary.byService.backend, 2);
+  assert.equal(summary.byRepository["lemon-alerts/sfj-backend-python"], 2);
 });
 
 test("normalizes paginated Vanta responses across multiple results", async () => {

@@ -27,8 +27,8 @@ test("renders operational tasks grouped by severity", async () => {
   assert.match(tasks, /Packages: nginx/);
   assert.match(tasks, /Assets: production-backend/);
   assert.match(tasks, /Owners: unknown/);
-  assert.match(tasks, /Services: unknown/);
-  assert.match(tasks, /Repositories: unknown/);
+  assert.match(tasks, /Services: backend/);
+  assert.match(tasks, /Repositories: lemon-alerts\/sfj-backend-python/);
   assert.match(tasks, /Findings:/);
   assert.match(tasks, /Fixed version: 1\.28\.3-r2/);
   assert.match(tasks, /External link: https:\/\/console\.aws\.amazon\.com\/inspector\/v2\/home/);
@@ -120,7 +120,7 @@ test("renders CSV with operational columns", async () => {
     csv,
     /^severity,title,packageIdentifier,assetName,environment,owner,service,repository,awsAccountId,awsRegion,isFixable,fixedVersion,remediateByDate,relatedVulns,externalURL/,
   );
-  assert.match(csv, /HIGH,CVE-2026-9256 - nginx:1\.28\.3,nginx,production-backend,production,unknown,unknown,unknown,,,true,1\.28\.3-r2/);
+  assert.match(csv, /HIGH,CVE-2026-9256 - nginx:1\.28\.3,nginx,production-backend,production,unknown,backend,lemon-alerts\/sfj-backend-python,,,true,1\.28\.3-r2/);
 });
 
 test("renders JSON summary counts as arrays for parser compatibility", async () => {

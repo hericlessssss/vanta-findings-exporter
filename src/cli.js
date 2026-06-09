@@ -1,15 +1,14 @@
 #!/usr/bin/env node
 
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, writeFile } from "node:fs/promises";
 import { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { loadVantaConfig } from "./lib/env.js";
-import { normalizeFindings } from "./lib/normalize.js";
-import { filterFindings } from "./lib/filters.js";
-import { buildSummary } from "./lib/summary.js";
-import { renderCsv, renderJiraTasks, renderJson, renderMarkdownSummary, renderOperationalTasks } from "./lib/render.js";
-import { createVantaClient } from "./lib/vanta-client.js";
-import { buildAssetMapSkeleton } from "./lib/asset-map.js";
+import {
+  fetchVantaData as fetchVantaWorkflow,
+  generateAssetMapSkeleton,
+  loadFindingsFromFiles,
+  renderFindingsOutput,
+} from "./lib/workflow.js";
 
 const usage = `Usage:
   node src/cli.js summarize --vulnerabilities <file> --assets <file> [--environment-map <file>] [--severity <level>] [--package <name>] [--environment <name>] [--asset <name>] [--owner <name>] [--service <name>] [--repository <name>] [--due-before YYYY-MM-DD] [--overdue] [--due-soon <days>] [--fixable-only] [--format markdown|json|csv] [--out <file>]
@@ -66,20 +65,21 @@ async function main(argv) {
     throw new Error("Missing required --vulnerabilities and --assets files.");
   }
 
-  const [vulnerabilityResponse, assetResponse] = await Promise.all([
-    readJson(options.vulnerabilities),
-    readJson(options.assets),
-  ]);
-  const findings = await buildFilteredFindings(vulnerabilityResponse, assetResponse, options);
+  const { findings } = await loadFindingsFromFiles({
+    vulnerabilitiesPath: options.vulnerabilities,
+    assetsPath: options.assets,
+    environmentMapPath: options["environment-map"],
+    filters: optionsToFilters(options),
+  });
 
   if (command === "tasks") {
-    await writeOutput(renderFindings(findings, options.format ?? "tasks", options), options);
+    await writeOutput(renderFindingsOutput(findings, options.format ?? "tasks", { groupBy: options["group-by"] }), options);
     return;
   }
 
   const format = options.format ?? "markdown";
 
-  await writeOutput(renderFindings(findings, format, options), options);
+  await writeOutput(renderFindingsOutput(findings, format, { groupBy: options["group-by"] }), options);
 }
 
 async function fetchVantaData(options) {
@@ -87,38 +87,38 @@ async function fetchVantaData(options) {
     throw new Error("Missing required --vulnerabilities-out and --assets-out files.");
   }
 
-  const config = await loadVantaConfig();
-  const client = await createVantaClient(config);
   const pageSize = options["page-size"] ?? "100";
 
-  const [vulnerabilities, assets] = await Promise.all([
-    client.fetchVulnerabilities({ pageSize }),
-    client.fetchVulnerableAssets({ pageSize }),
-  ]);
-
-  await Promise.all([
-    writeJson(options["vulnerabilities-out"], vulnerabilities),
-    writeJson(options["assets-out"], assets),
-  ]);
+  await fetchVantaWorkflow({
+    vulnerabilitiesOut: options["vulnerabilities-out"],
+    assetsOut: options["assets-out"],
+    pageSize,
+  });
 
   console.log(`Wrote vulnerabilities to ${options["vulnerabilities-out"]}`);
   console.log(`Wrote vulnerable assets to ${options["assets-out"]}`);
 }
 
 async function exportVantaData(options) {
-  const config = await loadVantaConfig();
-  const client = await createVantaClient(config);
   const pageSize = options["page-size"] ?? "100";
+  const vulnerabilityResponsePath = "exports/vulnerabilities.json";
+  const assetResponsePath = "exports/assets.json";
 
-  const [vulnerabilityResponse, assetResponse] = await Promise.all([
-    client.fetchVulnerabilities({ pageSize }),
-    client.fetchVulnerableAssets({ pageSize }),
-  ]);
+  await fetchVantaWorkflow({
+    vulnerabilitiesOut: vulnerabilityResponsePath,
+    assetsOut: assetResponsePath,
+    pageSize,
+  });
 
-  const findings = await buildFilteredFindings(vulnerabilityResponse, assetResponse, options);
+  const { findings } = await loadFindingsFromFiles({
+    vulnerabilitiesPath: vulnerabilityResponsePath,
+    assetsPath: assetResponsePath,
+    environmentMapPath: options["environment-map"],
+    filters: optionsToFilters(options),
+  });
   const format = options.format ?? "markdown";
 
-  await writeOutput(renderFindings(findings, format, options), options);
+  await writeOutput(renderFindingsOutput(findings, format, { groupBy: options["group-by"] }), options);
 }
 
 async function generateMapSkeleton(options) {
@@ -126,17 +126,12 @@ async function generateMapSkeleton(options) {
     throw new Error("Missing required --assets and --out files.");
   }
 
-  const assetResponse = await readJson(options.assets);
-  const skeleton = buildAssetMapSkeleton(assetResponse);
-
-  await writeJson(options.out, skeleton);
+  await generateAssetMapSkeleton({ assetsPath: options.assets, outPath: options.out });
   console.log(`Wrote asset map skeleton to ${options.out}`);
 }
 
-async function buildFilteredFindings(vulnerabilityResponse, assetResponse, options) {
-  const environmentMap = options["environment-map"] ? await readJson(options["environment-map"]) : {};
-
-  return filterFindings(normalizeFindings(vulnerabilityResponse, assetResponse, { environmentMap }), {
+function optionsToFilters(options) {
+  return {
     severity: options.severity,
     fixableOnly: Boolean(options["fixable-only"]),
     package: options.package,
@@ -148,33 +143,7 @@ async function buildFilteredFindings(vulnerabilityResponse, assetResponse, optio
     dueBefore: options["due-before"],
     overdue: Boolean(options.overdue),
     dueSoon: options["due-soon"],
-  });
-}
-
-function renderFindings(findings, format, options = {}) {
-  const summary = buildSummary(findings);
-
-  if (format === "json") {
-    return renderJson(findings, summary);
-  }
-
-  if (format === "csv") {
-    return renderCsv(findings);
-  }
-
-  if (format === "tasks") {
-    return renderOperationalTasks(findings, { groupBy: options["group-by"] ?? "severity" });
-  }
-
-  if (format === "jira") {
-    return renderJiraTasks(findings, { groupBy: options["group-by"] ?? "severity" });
-  }
-
-  if (format !== "markdown") {
-    throw new Error(`Unsupported format: ${format}`);
-  }
-
-  return renderMarkdownSummary(summary);
+  };
 }
 
 function parseOptions(args) {
@@ -205,20 +174,6 @@ function parseOptions(args) {
   }
 
   return options;
-}
-
-async function readJson(path) {
-  const content = await readFile(path, "utf8");
-  return JSON.parse(stripByteOrderMark(content));
-}
-
-async function writeJson(path, data) {
-  await mkdir(dirname(path), { recursive: true });
-  await writeFile(path, `${JSON.stringify(data, null, 2)}\n`, "utf8");
-}
-
-function stripByteOrderMark(content) {
-  return content.charCodeAt(0) === 0xfeff ? content.slice(1) : content;
 }
 
 export async function writeOutput(content, options, logger = console.log) {

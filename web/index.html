@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Vanta Findings Exporter</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Security operations</p>
+          <h1>Vanta Findings Exporter</h1>
+        </div>
+        <div class="topbar-actions">
+          <button class="ghost-button" id="reloadButton" type="button">Reload data</button>
+          <button class="primary-button" id="copyEnvironmentButton" type="button">Copy environment pack</button>
+        </div>
+      </header>
+
+      <section class="status-grid" id="statusGrid" aria-label="Setup status"></section>
+
+      <section class="action-strip" aria-label="Workflow actions">
+        <button id="testConnectionButton" type="button">
+          <span>01</span>
+          Test Vanta connection
+        </button>
+        <button id="fetchButton" type="button">
+          <span>02</span>
+          Fetch latest findings
+        </button>
+        <button id="generateMapButton" type="button">
+          <span>03</span>
+          Generate asset map
+        </button>
+        <button id="exportCsvButton" type="button">
+          <span>04</span>
+          Export CSV
+        </button>
+        <button id="generateTasksButton" type="button">
+          <span>05</span>
+          Generate Jira tasks
+        </button>
+      </section>
+
+      <section class="activity-panel" aria-label="Activity log">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">Activity</p>
+            <h2>Workflow log</h2>
+          </div>
+          <button class="text-button" id="clearActivityButton" type="button">Clear</button>
+        </div>
+        <div class="activity-log" id="activityLog"></div>
+      </section>
+
+      <section class="metrics-grid">
+        <article class="metric-panel summary-panel">
+          <div class="summary-count">
+            <p class="eyebrow">Current selection</p>
+            <h2 id="totalFindings">0</h2>
+            <span>findings</span>
+          </div>
+          <div class="metric-body">
+            <p class="chart-caption">Severity snapshot for the active filters</p>
+            <div class="sparkline" id="severitySparkline"></div>
+          </div>
+        </article>
+        <article class="metric-panel">
+          <p class="eyebrow">Severity</p>
+          <p class="chart-caption">Findings grouped by impact level</p>
+          <div class="metric-body">
+            <div id="severityChart" class="bar-chart"></div>
+          </div>
+        </article>
+        <article class="metric-panel">
+          <p class="eyebrow">Environment</p>
+          <p class="chart-caption">Distribution across mapped environments</p>
+          <div class="metric-body">
+            <div id="environmentChart" class="donut-panel"></div>
+          </div>
+        </article>
+        <article class="metric-panel">
+          <p class="eyebrow">Service distribution</p>
+          <p class="chart-caption">Top services affected by current findings</p>
+          <div class="metric-body">
+            <div id="serviceChart" class="compact-bars"></div>
+          </div>
+        </article>
+      </section>
+
+      <section class="workspace-grid">
+        <aside class="filter-panel">
+          <div class="panel-heading">
+            <p class="eyebrow">Filters</p>
+            <button class="text-button" id="clearFiltersButton" type="button">Clear</button>
+          </div>
+          <label>
+            Environment
+            <select id="environmentFilter" aria-label="Environment"></select>
+          </label>
+          <label>
+            Severity
+            <select id="severityFilter" aria-label="Severity"></select>
+          </label>
+          <label>
+            Service
+            <select id="serviceFilter" aria-label="Service"></select>
+          </label>
+          <label>
+            Search
+            <input id="searchInput" type="search" placeholder="CVE, package, asset" aria-label="Search" />
+          </label>
+          <label class="toggle-row">
+            <input id="fixableOnlyFilter" type="checkbox" />
+            Fixable only
+          </label>
+          <div class="environment-list" id="environmentList"></div>
+        </aside>
+
+        <section class="findings-panel">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Findings</p>
+              <h2 id="findingsHeading">All environments</h2>
+            </div>
+            <span id="activeCount" class="count-pill">0 active</span>
+          </div>
+          <div class="findings-list" id="findingsList"></div>
+        </section>
+
+        <aside class="details-panel">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Copy-ready context</p>
+              <h2>Finding details</h2>
+            </div>
+            <button class="ghost-button" id="copyFindingButton" type="button">Copy</button>
+          </div>
+          <div id="findingDetails" class="finding-details empty-state">
+            Select a finding to inspect the remediation context.
+          </div>
+        </aside>
+      </section>
+    </main>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>

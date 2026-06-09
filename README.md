@@ -422,6 +422,20 @@ Run tests:
 npm test
 ```
 
+Start the local web interface:
+
+```sh
+npm run web
+```
+
+Then open:
+
+```text
+http://localhost:4173
+```
+
+The web interface uses the local Node server to read `.env`, `exports/`, and `config/asset-map.json`. Vanta secrets are not exposed to the browser.
+
 Generate a Markdown summary from sanitized fixtures:
 
 ```sh
