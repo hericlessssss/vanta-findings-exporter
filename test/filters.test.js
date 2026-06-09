@@ -10,6 +10,9 @@ const findings = [
     packageIdentifier: "nginx",
     environment: "production",
     assetName: "production-api",
+    owner: "devops",
+    service: "backend",
+    repository: "sfj/backend",
     remediateByDate: "2026-06-10T00:00:00Z",
   },
   {
@@ -19,6 +22,9 @@ const findings = [
     packageIdentifier: "openssl",
     environment: "staging",
     assetName: "staging-api",
+    owner: "platform",
+    service: "backend",
+    repository: "sfj/backend",
     remediateByDate: "2026-06-20T00:00:00Z",
   },
   {
@@ -28,6 +34,9 @@ const findings = [
     packageIdentifier: "curl",
     environment: "development",
     assetName: "dev-worker",
+    owner: "data",
+    service: "worker",
+    repository: "sfj/worker",
     remediateByDate: null,
   },
 ];
@@ -95,6 +104,33 @@ test("filters findings by asset case-insensitively", () => {
   assert.deepEqual(
     filtered.map((finding) => finding.id),
     ["vuln_001"],
+  );
+});
+
+test("filters findings by owner case-insensitively", () => {
+  const filtered = filterFindings(findings, { owner: "DEVOPS" });
+
+  assert.deepEqual(
+    filtered.map((finding) => finding.id),
+    ["vuln_001"],
+  );
+});
+
+test("filters findings by service case-insensitively", () => {
+  const filtered = filterFindings(findings, { service: "BACKEND" });
+
+  assert.deepEqual(
+    filtered.map((finding) => finding.id),
+    ["vuln_001", "vuln_002"],
+  );
+});
+
+test("filters findings by repository case-insensitively", () => {
+  const filtered = filterFindings(findings, { repository: "SFJ/WORKER" });
+
+  assert.deepEqual(
+    filtered.map((finding) => finding.id),
+    ["vuln_003"],
   );
 });
 

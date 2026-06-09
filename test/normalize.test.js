@@ -13,15 +13,39 @@ test("normalizes Vanta vulnerabilities and joins assets by targetId", async () =
   assert.equal(findings[0].environment, "production");
   assert.equal(findings[0].isFixable, true);
   assert.equal(findings[0].fixedVersion, "1.28.3-r2");
+  assert.equal(findings[0].owner, "unknown");
+  assert.equal(findings[0].service, "unknown");
+  assert.equal(findings[0].repository, "unknown");
   assert.equal(findings[1].environment, "preproduction");
 });
 
-test("uses explicit environment mapping before inferred environment", async () => {
+test("uses explicit asset metadata mapping before inferred environment", async () => {
   const environmentMap = JSON.parse(await readFile("fixtures/environment-map.sample.json", "utf8"));
   const findings = await loadFindings({ environmentMap });
 
   assert.equal(findings[0].environment, "production");
+  assert.equal(findings[0].owner, "devops");
+  assert.equal(findings[0].service, "backend");
+  assert.equal(findings[0].repository, "sfj/backend");
+  assert.equal(findings[0].awsAccountId, "910976932103");
+  assert.equal(findings[0].awsRegion, "eu-west-1");
   assert.equal(findings[1].environment, "staging");
+  assert.equal(findings[1].owner, "platform");
+  assert.equal(findings[1].service, "backend");
+  assert.equal(findings[1].repository, "sfj/backend");
+});
+
+test("keeps string environment mapping backwards compatible", async () => {
+  const findings = await loadFindings({
+    environmentMap: {
+      assetIds: {
+        asset_001: "production",
+      },
+    },
+  });
+
+  assert.equal(findings[0].environment, "production");
+  assert.equal(findings[0].owner, "unknown");
 });
 
 test("builds summary counts by severity, package, and asset", async () => {
@@ -35,6 +59,9 @@ test("builds summary counts by severity, package, and asset", async () => {
   assert.equal(summary.byPackage.nginx, 1);
   assert.equal(summary.byPackage.openssl, 1);
   assert.equal(summary.byAsset["production-backend"], 1);
+  assert.equal(summary.byOwner.unknown, 2);
+  assert.equal(summary.byService.unknown, 2);
+  assert.equal(summary.byRepository.unknown, 2);
 });
 
 test("normalizes paginated Vanta responses across multiple results", async () => {

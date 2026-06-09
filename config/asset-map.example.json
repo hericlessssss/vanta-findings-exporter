@@ -1,0 +1,45 @@
+{
+  "assetIds": {
+    "vanta_asset_id_here": {
+      "environment": "production",
+      "owner": "devops",
+      "service": "backend",
+      "repository": "org/repository",
+      "awsAccountId": "000000000000",
+      "awsRegion": "us-east-1"
+    }
+  },
+  "assetNames": {
+    "production-backend": {
+      "environment": "production",
+      "owner": "devops",
+      "service": "backend",
+      "repository": "org/backend",
+      "awsAccountId": "000000000000",
+      "awsRegion": "us-east-1"
+    },
+    "preproduction-backend": {
+      "environment": "staging",
+      "owner": "platform",
+      "service": "backend",
+      "repository": "org/backend",
+      "awsAccountId": "000000000000",
+      "awsRegion": "us-east-1"
+    }
+  },
+  "assetNamePrefixes": {
+    "prod-": {
+      "environment": "production",
+      "owner": "devops",
+      "service": "unknown",
+      "repository": "unknown"
+    },
+    "staging-": {
+      "environment": "staging",
+      "owner": "platform",
+      "service": "unknown",
+      "repository": "unknown"
+    },
+    "dev-": "development"
+  }
+}

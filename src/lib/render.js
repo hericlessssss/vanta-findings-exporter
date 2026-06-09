@@ -14,6 +14,15 @@ export function renderMarkdownSummary(summary) {
     "## By Asset",
     renderCounts(summary.byAsset),
     "",
+    "## By Owner",
+    renderCounts(summary.byOwner),
+    "",
+    "## By Service",
+    renderCounts(summary.byService),
+    "",
+    "## By Repository",
+    renderCounts(summary.byRepository),
+    "",
     "## Findings",
     renderFindings(summary.findings),
   ].join("\n");
@@ -26,6 +35,11 @@ export function renderCsv(findings) {
     "packageIdentifier",
     "assetName",
     "environment",
+    "owner",
+    "service",
+    "repository",
+    "awsAccountId",
+    "awsRegion",
     "isFixable",
     "fixedVersion",
     "remediateByDate",
@@ -55,6 +69,9 @@ export function renderJson(findings, summary) {
         bySeverity: countObjectToRows(summary.bySeverity),
         byPackage: countObjectToRows(summary.byPackage),
         byAsset: countObjectToRows(summary.byAsset),
+        byOwner: countObjectToRows(summary.byOwner),
+        byService: countObjectToRows(summary.byService),
+        byRepository: countObjectToRows(summary.byRepository),
       },
       findings,
     },
@@ -63,64 +80,92 @@ export function renderJson(findings, summary) {
   );
 }
 
-export function renderJiraTasks(findings) {
+export function renderJiraTasks(findings, options = {}) {
   if (findings.length === 0) {
     return "No findings matched the selected filters.";
   }
 
-  const bySeverity = groupBy(findings, "severity");
+  const grouping = getGrouping(options.groupBy);
+  const groupedFindings = groupBy(findings, grouping.field);
 
-  return Object.entries(bySeverity)
-    .sort(([left], [right]) => severityRank(right) - severityRank(left))
-    .map(([severity, severityFindings]) => renderJiraTaskBlock(severity, severityFindings))
+  return Object.entries(groupedFindings)
+    .sort(grouping.sort)
+    .map(([groupName, groupFindings]) => renderJiraTaskBlock(grouping, groupName, groupFindings))
     .join("\n\n---\n\n");
 }
 
-export function renderOperationalTasks(findings) {
+export function renderOperationalTasks(findings, options = {}) {
   if (findings.length === 0) {
     return "No findings matched the selected filters.";
   }
 
-  const bySeverity = groupBy(findings, "severity");
+  const grouping = getGrouping(options.groupBy);
+  const groupedFindings = groupBy(findings, grouping.field);
 
-  return Object.entries(bySeverity)
-    .sort(([left], [right]) => severityRank(right) - severityRank(left))
-    .map(([severity, severityFindings]) => {
-      const packages = unique(severityFindings.map((finding) => finding.packageIdentifier));
-      const assets = unique(severityFindings.map((finding) => finding.assetName));
-      const environments = unique(severityFindings.map((finding) => finding.environment));
+  return Object.entries(groupedFindings)
+    .sort(grouping.sort)
+    .map(([groupName, groupFindings]) => {
+      const packages = unique(groupFindings.map((finding) => finding.packageIdentifier));
+      const assets = unique(groupFindings.map((finding) => finding.assetName));
+      const environments = unique(groupFindings.map((finding) => finding.environment));
+      const severities = unique(groupFindings.map((finding) => finding.severity));
+      const owners = unique(groupFindings.map((finding) => finding.owner));
+      const services = unique(groupFindings.map((finding) => finding.service));
+      const repositories = unique(groupFindings.map((finding) => finding.repository));
+      const awsAccounts = unique(groupFindings.map((finding) => finding.awsAccountId).filter(Boolean));
+      const awsRegions = unique(groupFindings.map((finding) => finding.awsRegion).filter(Boolean));
 
       return [
-        `[DevOps | Vanta | Security] Review and remediate ${severity.toLowerCase()} severity findings`,
+        buildOperationalTitle(grouping, groupName),
         "",
-        `:progress_bar: Analyze ${severityFindings.length} Vanta findings, group impacted assets by severity/package, define remediation actions, validate fixed versions, and document evidence for operational follow-up.`,
+        `:progress_bar: Analyze ${groupFindings.length} Vanta findings, group impacted assets by severity/package, define remediation actions, validate fixed versions, and document evidence for operational follow-up.`,
         "",
+        `Group: ${grouping.label} ${groupName}`,
+        `Severities: ${severities.join(", ")}`,
         `Environments: ${environments.join(", ")}`,
         `Packages: ${packages.join(", ")}`,
         `Assets: ${assets.join(", ")}`,
+        `Owners: ${owners.join(", ")}`,
+        `Services: ${services.join(", ")}`,
+        `Repositories: ${repositories.join(", ")}`,
+        `AWS accounts: ${awsAccounts.length > 0 ? awsAccounts.join(", ") : "not provided"}`,
+        `AWS regions: ${awsRegions.length > 0 ? awsRegions.join(", ") : "not provided"}`,
         "",
         "Findings:",
-        ...severityFindings.map(renderTaskFinding),
+        ...groupFindings.map(renderTaskFinding),
       ].join("\n");
     })
     .join("\n\n");
 }
 
-function renderJiraTaskBlock(severity, findings) {
+function renderJiraTaskBlock(grouping, groupName, findings) {
   const packages = unique(findings.map((finding) => finding.packageIdentifier));
   const assets = unique(findings.map((finding) => finding.assetName));
   const environments = unique(findings.map((finding) => finding.environment));
+  const severities = unique(findings.map((finding) => finding.severity));
+  const owners = unique(findings.map((finding) => finding.owner));
+  const services = unique(findings.map((finding) => finding.service));
+  const repositories = unique(findings.map((finding) => finding.repository));
+  const awsAccounts = unique(findings.map((finding) => finding.awsAccountId).filter(Boolean));
+  const awsRegions = unique(findings.map((finding) => finding.awsRegion).filter(Boolean));
 
   return [
-    `Title: [DevOps | Vanta | Security] Remediate ${severity.toLowerCase()} severity Vanta findings`,
+    `Title: ${buildJiraTitle(grouping, groupName)}`,
     "",
     "Description:",
     "",
-    `Analyze and remediate ${findings.length} ${severity.toLowerCase()} severity Vanta ${findings.length === 1 ? "finding" : "findings"}.`,
+    `Analyze and remediate ${findings.length} Vanta ${findings.length === 1 ? "finding" : "findings"} grouped by ${grouping.name}.`,
     "",
+    `Group: ${grouping.label} ${groupName}`,
+    `Severities: ${severities.join(", ")}`,
     `Environments: ${environments.join(", ")}`,
     `Packages: ${packages.join(", ")}`,
     `Assets: ${assets.join(", ")}`,
+    `Owners: ${owners.join(", ")}`,
+    `Services: ${services.join(", ")}`,
+    `Repositories: ${repositories.join(", ")}`,
+    `AWS accounts: ${awsAccounts.length > 0 ? awsAccounts.join(", ") : "not provided"}`,
+    `AWS regions: ${awsRegions.length > 0 ? awsRegions.join(", ") : "not provided"}`,
     "",
     "Findings:",
     ...findings.map(renderJiraFinding),
@@ -136,7 +181,13 @@ function renderJiraTaskBlock(severity, findings) {
 function renderJiraFinding(finding) {
   return [
     `- ${finding.title}`,
+    `  - Severity: ${finding.severity}`,
     `  - Environment: ${finding.environment}`,
+    `  - Owner: ${finding.owner}`,
+    `  - Service: ${finding.service}`,
+    `  - Repository: ${finding.repository}`,
+    `  - AWS account: ${finding.awsAccountId ?? "not provided"}`,
+    `  - AWS region: ${finding.awsRegion ?? "not provided"}`,
     `  - Asset: ${finding.assetName}`,
     `  - Package: ${finding.packageIdentifier}`,
     `  - Fixed version: ${finding.fixedVersion ?? "not provided"}`,
@@ -190,6 +241,9 @@ function renderFinding(finding) {
     `  - Severity: ${finding.severity}`,
     `  - Package: ${finding.packageIdentifier}`,
     `  - Asset: ${finding.assetName}`,
+    `  - Owner: ${finding.owner}`,
+    `  - Service: ${finding.service}`,
+    `  - Repository: ${finding.repository}`,
     `  - Fixed version: ${finding.fixedVersion ?? "not provided"}`,
     `  - Due date: ${finding.remediateByDate ?? "not provided"}`,
   ].join("\n");
@@ -198,8 +252,14 @@ function renderFinding(finding) {
 function renderTaskFinding(finding) {
   return [
     `- ${finding.title}`,
+    `  - Severity: ${finding.severity}`,
     `  - Environment: ${finding.environment}`,
     `  - Asset: ${finding.assetName}`,
+    `  - Owner: ${finding.owner}`,
+    `  - Service: ${finding.service}`,
+    `  - Repository: ${finding.repository}`,
+    `  - AWS account: ${finding.awsAccountId ?? "not provided"}`,
+    `  - AWS region: ${finding.awsRegion ?? "not provided"}`,
     `  - Package: ${finding.packageIdentifier}`,
     `  - Fixed version: ${finding.fixedVersion ?? "not provided"}`,
     `  - Due date: ${finding.remediateByDate ?? "not provided"}`,
@@ -222,6 +282,81 @@ function groupBy(items, key) {
     groups[value].push(item);
     return groups;
   }, {});
+}
+
+function getGrouping(groupBy = "severity") {
+  const groupings = {
+    severity: {
+      name: "severity",
+      label: "Severity",
+      field: "severity",
+      sort: ([left], [right]) => severityRank(right) - severityRank(left),
+    },
+    package: {
+      name: "package",
+      label: "Package",
+      field: "packageIdentifier",
+      sort: sortByGroupName,
+    },
+    asset: {
+      name: "asset",
+      label: "Asset",
+      field: "assetName",
+      sort: sortByGroupName,
+    },
+    environment: {
+      name: "environment",
+      label: "Environment",
+      field: "environment",
+      sort: sortByGroupName,
+    },
+    owner: {
+      name: "owner",
+      label: "Owner",
+      field: "owner",
+      sort: sortByGroupName,
+    },
+    service: {
+      name: "service",
+      label: "Service",
+      field: "service",
+      sort: sortByGroupName,
+    },
+    repository: {
+      name: "repository",
+      label: "Repository",
+      field: "repository",
+      sort: sortByGroupName,
+    },
+  };
+
+  const grouping = groupings[groupBy];
+
+  if (!grouping) {
+    throw new Error("Unsupported group-by value. Expected severity, package, asset, environment, owner, service, or repository.");
+  }
+
+  return grouping;
+}
+
+function buildOperationalTitle(grouping, groupName) {
+  if (grouping.name === "severity") {
+    return `[DevOps | Vanta | Security] Review and remediate ${groupName.toLowerCase()} severity findings`;
+  }
+
+  return `[DevOps | Vanta | Security] Review and remediate Vanta findings for ${grouping.name} ${groupName}`;
+}
+
+function buildJiraTitle(grouping, groupName) {
+  if (grouping.name === "severity") {
+    return `[DevOps | Vanta | Security] Remediate ${groupName.toLowerCase()} severity Vanta findings`;
+  }
+
+  return `[DevOps | Vanta | Security] Remediate Vanta findings for ${grouping.name} ${groupName}`;
+}
+
+function sortByGroupName([left], [right]) {
+  return left.localeCompare(right);
 }
 
 function unique(values) {

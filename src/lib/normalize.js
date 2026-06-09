@@ -1,5 +1,5 @@
 import { flattenVantaData } from "./vanta-response.js";
-import { resolveEnvironment } from "./environment-map.js";
+import { resolveAssetMetadata } from "./environment-map.js";
 
 export function normalizeFindings(vulnerabilityResponse, assetResponse, options = {}) {
   const vulnerabilities = flattenVantaData(vulnerabilityResponse);
@@ -9,6 +9,7 @@ export function normalizeFindings(vulnerabilityResponse, assetResponse, options 
 
   return vulnerabilities.map((vulnerability) => {
     const asset = assetsById.get(vulnerability.targetId);
+    const assetMetadata = resolveAssetMetadata(asset, environmentMap);
 
     return {
       id: vulnerability.id,
@@ -32,7 +33,12 @@ export function normalizeFindings(vulnerabilityResponse, assetResponse, options 
       assetId: vulnerability.targetId ?? null,
       assetName: asset?.name ?? "Unknown asset",
       assetType: asset?.assetType ?? "unknown",
-      environment: resolveEnvironment(asset, environmentMap),
+      environment: assetMetadata.environment,
+      owner: assetMetadata.owner,
+      service: assetMetadata.service,
+      repository: assetMetadata.repository,
+      awsAccountId: assetMetadata.awsAccountId,
+      awsRegion: assetMetadata.awsRegion,
     };
   });
 }

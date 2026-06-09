@@ -1,13 +1,26 @@
 {
   "assetIds": {
-    "asset_001": "production"
+    "asset_001": {
+      "environment": "production",
+      "owner": "devops",
+      "service": "backend",
+      "repository": "sfj/backend",
+      "awsAccountId": "910976932103",
+      "awsRegion": "eu-west-1"
+    }
   },
   "assetNames": {
-    "preproduction-backend": "staging"
+    "preproduction-backend": {
+      "environment": "staging",
+      "owner": "platform",
+      "service": "backend",
+      "repository": "sfj/backend",
+      "awsAccountId": "910976932103",
+      "awsRegion": "us-east-1"
+    }
   },
   "assetNamePrefixes": {
     "dev-": "development",
     "sandbox-": "sandbox"
   }
 }
-

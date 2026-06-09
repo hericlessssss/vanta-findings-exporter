@@ -1,3 +1,5 @@
+import "./asset-map.test.js";
+import "./cli.test.js";
 import "./env.test.js";
 import "./vanta-client.test.js";
 import "./vanta-response.test.js";

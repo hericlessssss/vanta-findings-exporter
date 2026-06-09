@@ -7,6 +7,8 @@ dist/
 build/
 coverage/
 exports/
+test-output/
+config/asset-map.json
 
 .DS_Store
 Thumbs.db

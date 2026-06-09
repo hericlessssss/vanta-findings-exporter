@@ -48,6 +48,7 @@ Initial scope:
 - create sanitized fixtures based on real API response shapes;
 - normalize finding data into an internal model;
 - group findings by severity, asset, and package;
+- enrich findings with optional owner, service, repository, AWS account, and AWS region metadata;
 - generate a Markdown summary;
 - generate operational task text;
 - keep the implementation local and simple;
@@ -71,7 +72,7 @@ Future inputs may include:
 - Vanta API vulnerability findings;
 - Vanta API vulnerable asset data;
 - simulated JSON fixtures matching expected Vanta data;
-- local environment mapping files, such as asset ID, asset name, asset prefix, or AWS account ID to environment;
+- local environment and ownership mapping files, such as asset ID, asset name, asset prefix, service, repository, team, AWS account ID, or AWS region;
 - optional ownership mapping files, such as repository, service, or team.
 
 Example environment mapping:
@@ -79,16 +80,42 @@ Example environment mapping:
 ```json
 {
   "assetIds": {
-    "asset_001": "production"
+    "asset_001": {
+      "environment": "production",
+      "owner": "devops",
+      "service": "backend",
+      "repository": "sfj/backend",
+      "awsAccountId": "910976932103",
+      "awsRegion": "eu-west-1"
+    }
   },
   "assetNames": {
-    "preproduction-backend": "staging"
+    "preproduction-backend": {
+      "environment": "staging",
+      "owner": "platform",
+      "service": "backend",
+      "repository": "sfj/backend"
+    }
   },
   "assetNamePrefixes": {
     "dev-": "development"
   }
 }
 ```
+
+Mapping values can be either a string, for backwards-compatible environment-only mapping, or an object with operational metadata.
+
+For real local usage, use [config/asset-map.example.json](config/asset-map.example.json) as the template and create `config/asset-map.json`.
+
+`config/asset-map.json` is ignored by Git because it may contain internal asset names, ownership details, AWS account IDs, and repository names.
+
+After fetching Vanta assets, the CLI can generate a starter map:
+
+```sh
+npm run cli -- generate-map-skeleton --assets exports/assets.json --out config/asset-map.json
+```
+
+The generated skeleton uses Vanta asset IDs as keys, fills operational metadata with `unknown` or `null`, and infers simple environments from asset names when possible.
 
 ## Expected Outputs
 
@@ -196,7 +223,7 @@ Proposed MVP:
 1. Define a minimal internal finding schema.
 2. Create sanitized JSON fixtures based on real Vanta API response shapes.
 3. Normalize findings into the internal model.
-4. Group findings by severity, asset, and package.
+4. Group findings by severity, asset, package, owner, service, or repository.
 5. Generate a Markdown summary.
 6. Generate operational task text in the expected Daily Status Report/Jira style.
 7. Validate output with realistic simulated examples.
@@ -407,6 +434,12 @@ Generate a Markdown summary with explicit environment mapping:
 npm run cli -- summarize --vulnerabilities fixtures/vanta-vulnerabilities.sample.json --assets fixtures/vanta-assets.sample.json --environment-map fixtures/environment-map.sample.json
 ```
 
+Generate a Markdown summary with a local operational asset map:
+
+```sh
+npm run cli -- summarize --vulnerabilities exports/vulnerabilities.json --assets exports/assets.json --environment-map config/asset-map.json
+```
+
 Generate a Markdown summary from paginated sanitized fixtures:
 
 ```sh
@@ -435,6 +468,14 @@ Filter by asset:
 
 ```sh
 npm run cli -- summarize --vulnerabilities fixtures/vanta-vulnerabilities.paginated.sample.json --assets fixtures/vanta-assets.paginated.sample.json --asset production-api
+```
+
+Filter by owner, service, or repository:
+
+```sh
+npm run cli -- summarize --vulnerabilities fixtures/vanta-vulnerabilities.sample.json --assets fixtures/vanta-assets.sample.json --environment-map fixtures/environment-map.sample.json --owner devops
+npm run cli -- summarize --vulnerabilities fixtures/vanta-vulnerabilities.sample.json --assets fixtures/vanta-assets.sample.json --environment-map fixtures/environment-map.sample.json --service backend
+npm run cli -- summarize --vulnerabilities fixtures/vanta-vulnerabilities.sample.json --assets fixtures/vanta-assets.sample.json --environment-map fixtures/environment-map.sample.json --repository sfj/backend
 ```
 
 Filter by due date:
@@ -473,6 +514,12 @@ Generate normalized JSON from sanitized fixtures:
 npm run cli -- summarize --vulnerabilities fixtures/vanta-vulnerabilities.sample.json --assets fixtures/vanta-assets.sample.json --format json
 ```
 
+Save output to a file:
+
+```sh
+npm run cli -- summarize --vulnerabilities fixtures/vanta-vulnerabilities.sample.json --assets fixtures/vanta-assets.sample.json --format json --out exports/summary.json
+```
+
 Generate CSV from sanitized fixtures:
 
 ```sh
@@ -485,24 +532,51 @@ Generate operational task text:
 npm run cli -- tasks --vulnerabilities fixtures/vanta-vulnerabilities.sample.json --assets fixtures/vanta-assets.sample.json
 ```
 
+Generate operational tasks grouped by package:
+
+```sh
+npm run cli -- tasks --vulnerabilities fixtures/vanta-vulnerabilities.sample.json --assets fixtures/vanta-assets.sample.json --group-by package
+```
+
 Generate Jira-ready task text:
 
 ```sh
 npm run cli -- tasks --vulnerabilities fixtures/vanta-vulnerabilities.sample.json --assets fixtures/vanta-assets.sample.json --severity high --format jira
 ```
 
+Generate Jira-ready tasks grouped by asset:
+
+```sh
+npm run cli -- tasks --vulnerabilities fixtures/vanta-vulnerabilities.sample.json --assets fixtures/vanta-assets.sample.json --format jira --group-by asset
+```
+
+Generate Jira-ready tasks grouped by owner:
+
+```sh
+npm run cli -- tasks --vulnerabilities fixtures/vanta-vulnerabilities.sample.json --assets fixtures/vanta-assets.sample.json --environment-map fixtures/environment-map.sample.json --format jira --group-by owner
+```
+
 Task output includes:
 
-- grouped task title by severity;
+- task title by selected grouping;
+- optional grouping by severity, package, asset, or environment;
+- optional grouping by owner, service, or repository when mapping metadata is provided;
 - environment summary;
 - package summary;
 - impacted asset summary;
-- per-finding details with environment, asset, package, fixed version, due date, and external link.
+- owner, service, repository, AWS account, and AWS region summary;
+- per-finding details with environment, asset, owner, service, repository, package, fixed version, due date, and external link.
 
 Fetch live Vanta data:
 
 ```sh
 npm run cli -- fetch --vulnerabilities-out exports/vulnerabilities.json --assets-out exports/assets.json
+```
+
+Generate a local asset map skeleton from fetched Vanta assets:
+
+```sh
+npm run cli -- generate-map-skeleton --assets exports/assets.json --out config/asset-map.json
 ```
 
 Export live Vanta data directly:
@@ -523,6 +597,18 @@ Export live Jira-ready tasks:
 npm run cli -- export --environment production --format jira
 ```
 
+Export live Jira-ready tasks grouped by package:
+
+```sh
+npm run cli -- export --environment production --format jira --group-by package
+```
+
+Save live Jira-ready tasks to a file:
+
+```sh
+npm run cli -- export --environment production --format jira --group-by package --out exports/production-jira-tasks.txt
+```
+
 Use fetched data with the existing workflow:
 
 ```sh
@@ -530,6 +616,10 @@ npm run cli -- summarize --vulnerabilities exports/vulnerabilities.json --assets
 ```
 
 Files under `exports/` are ignored by Git and should be treated as sensitive security data.
+
+`config/asset-map.json` is also ignored by Git and should be treated as internal operational data.
+
+`--out <file>` is supported by `summarize`, `tasks`, and `export`. When used, the CLI writes the rendered output to the selected file and prints only the destination path.
 
 Latest live fetch validation:
 

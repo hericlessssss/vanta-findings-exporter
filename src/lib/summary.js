@@ -5,6 +5,9 @@ export function buildSummary(findings) {
     bySeverity: countBy(findings, "severity"),
     byPackage: countBy(findings, "packageIdentifier"),
     byAsset: countBy(findings, "assetName"),
+    byOwner: countBy(findings, "owner"),
+    byService: countBy(findings, "service"),
+    byRepository: countBy(findings, "repository"),
     findings,
   };
 }
@@ -16,4 +19,3 @@ function countBy(items, key) {
     return counts;
   }, {});
 }
-

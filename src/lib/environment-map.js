@@ -1,27 +1,34 @@
 export function resolveEnvironment(asset, environmentMap = {}) {
-  const mapped = findMappedEnvironment(asset, environmentMap);
-
-  if (mapped) {
-    return mapped;
-  }
-
-  return inferEnvironment(asset);
+  return resolveAssetMetadata(asset, environmentMap).environment;
 }
 
-function findMappedEnvironment(asset, environmentMap) {
+export function resolveAssetMetadata(asset, environmentMap = {}) {
+  const mapped = findMappedMetadata(asset, environmentMap);
+
+  return {
+    environment: mapped.environment ?? inferEnvironment(asset),
+    owner: mapped.owner ?? "unknown",
+    service: mapped.service ?? "unknown",
+    repository: mapped.repository ?? "unknown",
+    awsAccountId: mapped.awsAccountId ?? null,
+    awsRegion: mapped.awsRegion ?? null,
+  };
+}
+
+function findMappedMetadata(asset, environmentMap) {
   if (!asset) {
-    return null;
+    return {};
   }
 
   const assetId = asset.id;
   const assetName = asset.name;
 
   if (assetId && environmentMap.assetIds?.[assetId]) {
-    return environmentMap.assetIds[assetId];
+    return normalizeMapEntry(environmentMap.assetIds[assetId]);
   }
 
   if (assetName && environmentMap.assetNames?.[assetName]) {
-    return environmentMap.assetNames[assetName];
+    return normalizeMapEntry(environmentMap.assetNames[assetName]);
   }
 
   if (assetName && environmentMap.assetNamePrefixes) {
@@ -30,11 +37,23 @@ function findMappedEnvironment(asset, environmentMap) {
       .find((prefix) => assetName.startsWith(prefix));
 
     if (matchedPrefix) {
-      return environmentMap.assetNamePrefixes[matchedPrefix];
+      return normalizeMapEntry(environmentMap.assetNamePrefixes[matchedPrefix]);
     }
   }
 
-  return null;
+  return {};
+}
+
+function normalizeMapEntry(entry) {
+  if (typeof entry === "string") {
+    return { environment: entry };
+  }
+
+  if (!entry || typeof entry !== "object") {
+    return {};
+  }
+
+  return entry;
 }
 
 function inferEnvironment(asset) {
@@ -54,4 +73,3 @@ function inferEnvironment(asset) {
 
   return "unknown";
 }
-

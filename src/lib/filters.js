@@ -24,6 +24,18 @@ export function filterFindings(findings, filters = {}) {
       return false;
     }
 
+    if (filters.owner && !matchesCaseInsensitive(finding.owner, filters.owner)) {
+      return false;
+    }
+
+    if (filters.service && !matchesCaseInsensitive(finding.service, filters.service)) {
+      return false;
+    }
+
+    if (filters.repository && !matchesCaseInsensitive(finding.repository, filters.repository)) {
+      return false;
+    }
+
     if (dueBefore && !isDueBefore(finding.remediateByDate, dueBefore)) {
       return false;
     }
