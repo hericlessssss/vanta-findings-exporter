@@ -2,13 +2,42 @@
 
 ## Overview
 
-Vanta Findings Exporter is an internal tool proposal for turning Vanta vulnerability findings into operation-ready outputs.
+Vanta Findings Exporter is an internal tool for turning Vanta vulnerability findings and failing Vanta tests into operation-ready outputs.
 
 The project is intended to help Security, DevOps, SRE, and engineering teams review, group, prioritize, and communicate vulnerability remediation work without manually opening each finding in the Vanta UI.
 
-The stack is not defined yet. This repository starts with documentation first, then incremental implementation.
+The current implementation is a local Node.js CLI and web dashboard with no external runtime dependencies.
 
 The first Vanta API spike was successful: OAuth authentication works with a read-only Manage Vanta application, and the project can read vulnerability and vulnerable asset data from the Vanta API.
+
+## Quick Start
+
+After creating the Vanta Developer application and filling `.env` correctly, run the project locally with:
+
+```sh
+npm test
+npm run web
+```
+
+Open the local dashboard:
+
+```text
+http://localhost:4173
+```
+
+Recommended local workflow:
+
+1. Confirm `.env` exists and contains `VANTA_CLIENT_ID` and `VANTA_CLIENT_SECRET`.
+2. Run `npm test` to validate the local project.
+3. Run `npm run web`.
+4. Open `http://localhost:4173`.
+5. Click `01 Test Vanta connection`.
+6. Click `02 Fetch latest findings` to load vulnerabilities.
+7. Click `03 Generate asset map` only when you need to refresh the local mapping skeleton.
+8. Click `06 Fetch failing tests` to load Vanta tests that need action.
+9. Use filters, details, copy blocks, CSV export, and Jira task generation as needed.
+
+Generated files under `exports/`, local credentials in `.env`, and local mappings in `config/asset-map.json` are intentionally ignored by Git.
 
 ## Problem
 
