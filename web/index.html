@@ -67,7 +67,7 @@
             <span>findings</span>
           </div>
           <div class="metric-body">
-            <p class="chart-caption">Severity snapshot for the active filters</p>
+            <p class="chart-caption">Severity snapshot for active filters</p>
             <div class="sparkline" id="severitySparkline"></div>
           </div>
         </article>
@@ -80,14 +80,14 @@
         </article>
         <article class="metric-panel">
           <p class="eyebrow">Environment</p>
-          <p class="chart-caption">Distribution across mapped environments</p>
+          <p class="chart-caption">Distribution across environments</p>
           <div class="metric-body">
             <div id="environmentChart" class="donut-panel"></div>
           </div>
         </article>
         <article class="metric-panel">
           <p class="eyebrow">Service distribution</p>
-          <p class="chart-caption">Top services affected by current findings</p>
+          <p class="chart-caption">Top services in current selection</p>
           <div class="metric-body">
             <div id="serviceChart" class="compact-bars"></div>
           </div>
@@ -114,7 +114,7 @@
           </label>
           <label>
             Search
-            <input id="searchInput" type="search" placeholder="CVE, package, asset" aria-label="Search" />
+            <input id="searchInput" type="search" placeholder="CVE, package, asset…" aria-label="Search" />
           </label>
           <label class="toggle-row">
             <input id="fixableOnlyFilter" type="checkbox" />

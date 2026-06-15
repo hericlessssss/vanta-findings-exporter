@@ -181,23 +181,36 @@ function renderFindingsList(findings) {
   }
 
   elements.findingsList.innerHTML = findings.map((finding) => `
-    <button class="finding-row ${finding.id === state.selectedFindingId ? "active" : ""}" data-id="${escapeHtml(finding.id)}" type="button">
-      <span class="severity-pill severity-${escapeHtml(finding.severity)}">${escapeHtml(finding.severity)}</span>
-      <span>
+    <div class="finding-row ${finding.id === state.selectedFindingId ? "active" : ""}" data-id="${escapeHtml(finding.id)}">
+      <span class="severity-badge severity-${escapeHtml(finding.severity)}">${escapeHtml(finding.severity)}</span>
+      <span class="finding-content">
         <strong class="finding-title">${escapeHtml(finding.title)}</strong>
         <span class="finding-meta">${escapeHtml(finding.environment)} / ${escapeHtml(finding.service)} / ${escapeHtml(finding.packageIdentifier)}</span>
       </span>
-      <span class="finding-badges">
-        <span class="due-pill">Due ${escapeHtml(formatDueDate(finding.remediateByDate))}</span>
-        <span class="count-pill">${finding.fixedVersion ? "fix available" : "review"}</span>
+      <span class="finding-actions">
+        ${finding.remediateByDate ? `<span class="due-badge">Due ${escapeHtml(formatDueDate(finding.remediateByDate))}</span>` : ""}
+        <button class="copy-agent-btn" data-id="${escapeHtml(finding.id)}" type="button">Copy for Agent</button>
       </span>
-    </button>
+    </div>
   `).join("");
 
-  elements.findingsList.querySelectorAll("button").forEach((button) => {
-    button.addEventListener("click", () => {
-      state.selectedFindingId = button.dataset.id;
+  elements.findingsList.querySelectorAll(".finding-row").forEach((row) => {
+    row.addEventListener("click", (event) => {
+      if (event.target.closest(".copy-agent-btn")) return;
+      state.selectedFindingId = row.dataset.id;
       render();
+    });
+  });
+
+  elements.findingsList.querySelectorAll(".copy-agent-btn").forEach((btn) => {
+    btn.addEventListener("click", async (event) => {
+      event.stopPropagation();
+      const finding = state.findings.find((f) => f.id === btn.dataset.id);
+      if (!finding) return;
+      await navigator.clipboard.writeText(buildCopyBlock(finding));
+      state.selectedFindingId = btn.dataset.id;
+      render();
+      addActivity("success", `Copied: ${finding.title}`);
     });
   });
 }
@@ -431,7 +444,7 @@ function renderStatusCard(label, item) {
   return `
     <article class="status-card ${item.exists ? "ready" : "missing"}">
       <strong><span class="status-dot"></span>${escapeHtml(label)}</strong>
-      <span>${item.exists ? `Ready / ${formatSize(item.size)}` : "Missing"}</span>
+      <span>${item.exists ? `Ready · ${formatSize(item.size)}` : "Missing"}</span>
     </article>
   `;
 }
@@ -462,10 +475,18 @@ function renderCompactBars(target, counts) {
 }
 
 function renderSparkline(target, counts) {
-  const entries = Object.entries(counts).sort(([, left], [, right]) => right - left);
+  const order = ["CRITICAL", "HIGH", "MEDIUM", "LOW", "UNKNOWN"];
+  const entries = Object.entries(counts).sort(([a], [b]) => {
+    const ai = order.indexOf(a);
+    const bi = order.indexOf(b);
+    if (ai === -1 && bi === -1) return a.localeCompare(b);
+    if (ai === -1) return 1;
+    if (bi === -1) return -1;
+    return ai - bi;
+  });
   const max = Math.max(1, ...entries.map(([, count]) => count));
   target.innerHTML = entries.map(([name, count]) => `
-    <div class="sparkline-bar" style="height:${Math.max(14, (count / max) * 86)}px; --bar-color:${severityColor(name)}" title="${escapeHtml(formatChartLabel(name))}: ${count}">
+    <div class="sparkline-bar" style="height:${Math.max(14, (count / max) * 80)}px; --bar-color:${severityColor(name)}" title="${escapeHtml(formatChartLabel(name))}: ${count}">
       <span>${escapeHtml(String(count))}</span>
     </div>
   `).join("");
@@ -479,7 +500,7 @@ function renderDonut(target, counts) {
   }
 
   const total = Math.max(1, entries.reduce((sum, [, count]) => sum + count, 0));
-  const colors = ["#46d9ff", "#7dffb2", "#ffcf5a", "#ff7777", "#9b8cff", "#f28dff"];
+  const colors = ["#00c8e8", "#22c55e", "#f5c518", "#ff6b35", "#ff2244", "#a78bfa"];
   let cursor = 0;
   const stops = entries.map(([, count], index) => {
     const start = cursor;
@@ -522,16 +543,15 @@ function unique(values) {
 
 function severityColor(severity) {
   return {
-    CRITICAL: "#c9a0ff",
-    HIGH: "#ff5f6d",
-    MEDIUM: "#ffbf3f",
-    LOW: "#4ee69a",
-  }[severity] ?? "#46d9ff";
+    CRITICAL: "#ff2244",
+    HIGH: "#ff6b35",
+    MEDIUM: "#f5c518",
+    LOW: "#3b82f6",
+  }[severity] ?? "#6b7280";
 }
 
-function serviceColor(name) {
-  if (name === "unknown") return "#9b8cff";
-  return "#46d9ff";
+function serviceColor() {
+  return "#00c8e8";
 }
 
 function formatChartLabel(value) {
