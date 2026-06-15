@@ -14,6 +14,22 @@ export async function readJsonFile(path) {
   return JSON.parse(stripByteOrderMark(content));
 }
 
+export async function readOptionalJsonFile(path, fallback = {}) {
+  if (!path) {
+    return fallback;
+  }
+
+  try {
+    return await readJsonFile(path);
+  } catch (error) {
+    if (error.code === "ENOENT") {
+      return fallback;
+    }
+
+    throw error;
+  }
+}
+
 export async function writeJsonFile(path, data) {
   await mkdir(dirname(path), { recursive: true });
   await writeFile(path, `${JSON.stringify(data, null, 2)}\n`, "utf8");
@@ -74,7 +90,7 @@ export async function loadFindingsFromFiles({ vulnerabilitiesPath, assetsPath, e
   const [vulnerabilityResponse, assetResponse, environmentMap] = await Promise.all([
     readJsonFile(vulnerabilitiesPath),
     readJsonFile(assetsPath),
-    environmentMapPath ? readJsonFile(environmentMapPath) : Promise.resolve({}),
+    readOptionalJsonFile(environmentMapPath, {}),
   ]);
 
   const findings = filterFindings(

@@ -7,3 +7,4 @@ import "./filters.test.js";
 import "./normalize.test.js";
 import "./normalize-tests.test.js";
 import "./render.test.js";
+import "./workflow.test.js";
