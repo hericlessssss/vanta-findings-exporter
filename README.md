@@ -12,7 +12,21 @@ The first Vanta API spike was successful: OAuth authentication works with a read
 
 ## Quick Start
 
-After creating the Vanta Developer application and filling `.env` correctly, run the project locally with:
+Prerequisites:
+
+- Node.js 20 or newer.
+- npm available in the terminal.
+- A Vanta Developer application with read access.
+
+After creating the Vanta Developer application, create `.env` from `.env.example` and fill the credentials:
+
+```text
+VANTA_CLIENT_ID=
+VANTA_CLIENT_SECRET=
+VANTA_API_SCOPE=vanta-api.all:read
+```
+
+Run the project locally with:
 
 ```sh
 npm test
@@ -38,6 +52,20 @@ Recommended local workflow:
 9. Use filters, details, copy blocks, CSV export, and Jira task generation as needed.
 
 Generated files under `exports/`, local credentials in `.env`, and local mappings in `config/asset-map.json` are intentionally ignored by Git.
+
+The project is designed to run on macOS, Windows, and Linux through the same npm commands. Avoid committing OS-specific local scripts or absolute machine paths.
+
+If port `4173` is already in use, run the web server on another port:
+
+```sh
+PORT=4174 npm run web
+```
+
+On Windows PowerShell:
+
+```powershell
+$env:PORT=4174; npm run web
+```
 
 ## Problem
 

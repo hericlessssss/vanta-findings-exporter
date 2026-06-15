@@ -3,6 +3,7 @@ const state = {
   summary: null,
   selectedFindingId: null,
   selectedEnvironment: "",
+  findingsNeedsFetch: false,
   activity: [],
   filters: {
     environment: "",
@@ -101,11 +102,12 @@ async function loadFindings() {
     const data = await getJson("/api/findings");
     state.findings = data.findings;
     state.summary = data.summary;
+    state.findingsNeedsFetch = Boolean(data.needsFetch);
     state.selectedFindingId ??= state.findings[0]?.id ?? null;
     hydrateFilters();
     render();
     await refreshStatus();
-    addActivity("success", `Loaded ${state.findings.length} findings from local exports.`);
+    addActivity(data.needsFetch ? "running" : "success", data.message ?? `Loaded ${state.findings.length} findings from local exports.`);
   } catch (error) {
     addActivity("error", error.message);
   }
@@ -115,6 +117,9 @@ async function loadTests() {
   try {
     const data = await getJson("/api/tests");
     renderTests(data.tests, data.summary);
+    if (data.needsFetch) {
+      addActivity("running", data.message);
+    }
   } catch {
     renderTests([], { totalTests: 0, failingEntities: 0 });
   }
@@ -171,7 +176,7 @@ function renderEnvironmentList() {
 
 function renderFindingsList(findings) {
   if (findings.length === 0) {
-    elements.findingsList.innerHTML = `<div class="empty-state">No findings match the selected filters.</div>`;
+    elements.findingsList.innerHTML = `<div class="empty-state">${state.findingsNeedsFetch ? "Click 02 Fetch latest findings to load Vanta vulnerability data." : "No findings match the selected filters."}</div>`;
     return;
   }
 

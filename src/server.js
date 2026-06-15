@@ -1,6 +1,6 @@
-import { access, readFile, stat, writeFile } from "node:fs/promises";
+import { access, mkdir, readFile, stat, writeFile } from "node:fs/promises";
 import { createServer } from "node:http";
-import { extname, join, normalize } from "node:path";
+import { extname, isAbsolute, join, normalize, relative, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { dirname } from "node:path";
 import { loadVantaConfig } from "./lib/env.js";
@@ -50,7 +50,11 @@ const server = createServer(async (request, response) => {
 
 server.on("error", (error) => {
   if (error.code === "EADDRINUSE") {
-    console.error(`Port ${port} is already in use. Open http://localhost:${port} or run with another port, for example: $env:PORT=4174; npm run web`);
+    console.error([
+      `Port ${port} is already in use. Open http://localhost:${port} or run with another port.`,
+      "macOS/Linux: PORT=4174 npm run web",
+      "Windows PowerShell: $env:PORT=4174; npm run web",
+    ].join("\n"));
     process.exitCode = 1;
     return;
   }
@@ -103,6 +107,16 @@ async function handleApi(request, response) {
   }
 
   if (request.method === "GET" && url.pathname === "/api/findings") {
+    if (!(await filesExist(paths.vulnerabilities, paths.assets))) {
+      sendJson(response, 200, {
+        findings: [],
+        summary: emptyFindingsSummary(),
+        needsFetch: true,
+        message: "No local vulnerability export found. Click 02 Fetch latest findings.",
+      });
+      return;
+    }
+
     const filters = Object.fromEntries(url.searchParams.entries());
     const data = await loadFindingsFromFiles({
       vulnerabilitiesPath: paths.vulnerabilities,
@@ -119,6 +133,16 @@ async function handleApi(request, response) {
   }
 
   if (request.method === "GET" && url.pathname === "/api/tests") {
+    if (!(await filesExist(paths.tests, paths.testEntities))) {
+      sendJson(response, 200, {
+        tests: [],
+        summary: { totalTests: 0, failingEntities: 0, byCategory: {}, byIntegration: {} },
+        needsFetch: true,
+        message: "No local tests export found. Click 06 Fetch failing tests.",
+      });
+      return;
+    }
+
     const data = await loadTestsFromFiles({
       testsPath: paths.tests,
       testEntitiesPath: paths.testEntities,
@@ -138,6 +162,7 @@ async function handleApi(request, response) {
     });
     const output = renderFindingsOutput(findings, format, { groupBy });
     const outPath = join(rootDir, "exports", `web-${format}-by-${groupBy}.${format === "csv" ? "csv" : "txt"}`);
+    await mkdir(dirname(outPath), { recursive: true });
     await writeFile(outPath, `${output}\n`, "utf8");
     sendJson(response, 200, { ok: true, path: outPath, output });
     return;
@@ -163,6 +188,24 @@ function countObjectToRows(counts) {
   return Object.entries(counts)
     .sort(([left], [right]) => left.localeCompare(right))
     .map(([name, count]) => ({ name, count }));
+}
+
+function emptyFindingsSummary() {
+  return {
+    totalFindings: 0,
+    fixableFindings: 0,
+    bySeverity: [],
+    byPackage: [],
+    byAsset: [],
+    byOwner: [],
+    byService: [],
+    byRepository: [],
+  };
+}
+
+async function filesExist(...filePaths) {
+  const statuses = await Promise.all(filePaths.map(fileStatus));
+  return statuses.every((status) => status.exists);
 }
 
 async function getStatus() {
@@ -201,8 +244,9 @@ async function serveStatic(request, response) {
   const url = new URL(request.url, `http://${request.headers.host}`);
   const requestedPath = url.pathname === "/" ? "/index.html" : url.pathname;
   const filePath = normalize(join(publicDir, requestedPath));
+  const relativePath = relative(publicDir, filePath);
 
-  if (!filePath.startsWith(publicDir)) {
+  if (relativePath === ".." || relativePath.startsWith(`..${sep}`) || isAbsolute(relativePath)) {
     sendText(response, 403, "Forbidden");
     return;
   }
